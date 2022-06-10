@@ -1,0 +1,87 @@
+name: Test Container Image
+on:
+  workflow_call:
+    inputs:
+      registry:
+        description: The ECR container image registry url
+        type: string
+        required: true
+      repository-name:
+        description: The container image repository name (without version tag)
+        type: string
+        required: true
+      role-to-assume:
+        description: The arn for the role to be used by this workflow
+        type: string
+        required: true
+      major-minor-version:
+        description: The major/minor version of the image that will be used to generate the full tag
+        type: string
+        required: false
+        default: "1.0"
+      docker-context:
+        description: The directory context for docker build
+        type: string
+        required: false
+        default: "."
+      title:
+        description: The title to be used for a container image label
+        type: string
+        required: false
+        default: ""
+      description:
+        description: The description to be used for a container image label
+        type: string
+        required: false
+        default: ""
+      authors:
+        description: The authors to be used for a container image label
+        type: string
+        required: false
+        default: ""
+      documentation-url:
+        description: The documentation url to be used for a container image label
+        type: string
+        required: false
+        default: ""
+      test-target:
+        description: A test-target for testing the dockerfile
+        type: string
+        required: false
+        default: ""
+jobs:
+  pull-request-checks:
+    runs-on: ubuntu-latest
+    env:
+      DOCKER_BUILDKIT: 1
+    permissions:
+      actions: write
+      contents: read
+      id-token: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: ${{ inputs.role-to-assume }}
+          aws-region: us-east-2
+
+      - name: Docker Login
+        run: aws ecr get-login-password --region us-east-2 | docker login --username AWS --password-stdin ${{ inputs.registry }}
+
+      - name: Get next image tag
+        id: get-next-image-tag
+        uses: acceleratelearning/get-next-ecr-image-tag-action@main
+        with:
+          registry: ${{ inputs.registry }}
+          repository-name: ${{ inputs.repository-name }}
+          major-minor-version: ${{ inputs.major-minor-version }}
+
+      - name: Test container image
+        if: ${{ inputs.test-target != '' }}
+        run: docker build --target ${{ inputs.test-target }} ${{ inputs.docker-context }}
+
+      - name: Build container image
+        run: docker build --tag ${{ steps.get-next-image-tag.outputs.next-image-name }} ${{ inputs.docker-context }}
