@@ -92,7 +92,7 @@ jobs:
       - name: Get Test Results
         if: ${{ inputs.test-target != '' }}
         run: |
-          docker run -i --rm ${{ steps.get-next-image-tag.outputs.next-image-name }} sh -c "if [ -f /testresults/TestResults.xml ]; then cat /testresults/TestResults.xml; fi" > TestResult.xml
+          docker run -i --rm ${{ steps.get-next-image-tag.outputs.next-image-name }} sh -c "if [ -f /testresults/TestResults.xml ]; then cat /testresults/TestResults.xml; fi" > TestResults.xml
 
       - name: Unit Tests Report
         if: ${{ inputs.test-target != '' }}
