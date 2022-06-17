@@ -81,7 +81,7 @@ jobs:
         if: ${{ inputs.test-target != '' }}
         uses: acceleratelearning/build-container-image-action@main
         with:
-          image-name: container-test
+          image-name: ${{ steps.get-next-image-tag.outputs.next-image-name }}
           docker-context: ${{ inputs.docker-context }}
           title: ${{ inputs.title }}
           description: ${{ inputs.description }}
@@ -92,7 +92,7 @@ jobs:
       - name: Get Test Results
         if: ${{ inputs.test-target != '' }}
         run: |
-          docker run -it --rm container-test cat /testresults/TestResults.xml > TestResults.xml
+          docker run -it --rm ${{ steps.get-next-image-tag.outputs.next-image-name }} cat /testresults/TestResults.xml > TestResults.xml
           cat TestResults.xml
 
       - name: Build container image
