@@ -1,4 +1,4 @@
-name: Test Container Image
+name: Pull Request Checks
 on:
   workflow_call:
     inputs:
@@ -50,8 +50,10 @@ on:
         required: false
         default: ""
 jobs:
-  pull-request-checks:
+  unit-tests:
+    name: Unit Tests
     runs-on: ubuntu-latest
+    if: inputs.test-target != ''
     permissions:
       actions: write
       contents: read
@@ -78,7 +80,6 @@ jobs:
           major-minor-version: ${{ inputs.major-minor-version }}
 
       - name: Test container image
-        if: ${{ inputs.test-target != '' }}
         uses: acceleratelearning/build-container-image-action@main
         with:
           image-name: ${{ steps.get-next-image-tag.outputs.next-image-name }}
@@ -90,13 +91,39 @@ jobs:
           test-target: ${{ inputs.test-target }}
 
       - name: Get Test Results
-        if: ${{ inputs.test-target != '' }}
         run: |
           docker run -i --rm ${{ steps.get-next-image-tag.outputs.next-image-name }} sh -c "if [ -f /testresults/TestResults.xml ]; then cat /testresults/TestResults.xml; fi" > TestResults.xml
 
       - name: Unit Tests Report
-        if: ${{ inputs.test-target != '' }}
         uses: acceleratelearning/unit-tests-report-action@main
+
+  build-test:
+    name: Test Full Build
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+      contents: read
+      id-token: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: ${{ inputs.role-to-assume }}
+          aws-region: us-east-2
+
+      - name: Docker Login
+        run: aws ecr get-login-password --region us-east-2 | docker login --username AWS --password-stdin ${{ inputs.registry }}
+
+      - name: Get next image tag
+        id: get-next-image-tag
+        uses: acceleratelearning/get-next-ecr-image-tag-action@main
+        with:
+          registry: ${{ inputs.registry }}
+          repository-name: ${{ inputs.repository-name }}
+          major-minor-version: ${{ inputs.major-minor-version }}
 
       - name: Build container image
         uses: acceleratelearning/build-container-image-action@main
