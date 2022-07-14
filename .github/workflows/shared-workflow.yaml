@@ -73,14 +73,14 @@ jobs:
 
       - name: Get next image tag
         id: get-next-image-tag
-        uses: acceleratelearning/get-next-ecr-image-tag-action@main
+        uses: acceleratelearning/action-get-next-ecr-image-tag@main
         with:
           registry: ${{ inputs.registry }}
           repository-name: ${{ inputs.repository-name }}
           major-minor-version: ${{ inputs.major-minor-version }}
 
       - name: Test container image
-        uses: acceleratelearning/build-container-image-action@main
+        uses: acceleratelearning/action-build-container-image@main
         with:
           image-name: ${{ steps.get-next-image-tag.outputs.next-image-name }}
           docker-context: ${{ inputs.docker-context }}
@@ -95,7 +95,7 @@ jobs:
           docker run -i --rm ${{ steps.get-next-image-tag.outputs.next-image-name }} sh -c "if [ -f /testresults/TestResults.xml ]; then cat /testresults/TestResults.xml; fi" > TestResults.xml
 
       - name: Unit Tests Report
-        uses: acceleratelearning/unit-tests-report-action@main
+        uses: acceleratelearning/action-unit-tests-report@main
 
   build-test:
     name: Test Full Build
@@ -119,14 +119,14 @@ jobs:
 
       - name: Get next image tag
         id: get-next-image-tag
-        uses: acceleratelearning/get-next-ecr-image-tag-action@main
+        uses: acceleratelearning/action-get-next-ecr-image-tag@main
         with:
           registry: ${{ inputs.registry }}
           repository-name: ${{ inputs.repository-name }}
           major-minor-version: ${{ inputs.major-minor-version }}
 
       - name: Build container image
-        uses: acceleratelearning/build-container-image-action@main
+        uses: acceleratelearning/action-build-container-image@main
         with:
           image-name: ${{ steps.get-next-image-tag.outputs.next-image-name }}
           docker-context: ${{ inputs.docker-context }}
