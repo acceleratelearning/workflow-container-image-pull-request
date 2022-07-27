@@ -49,6 +49,15 @@ on:
         type: string
         required: false
         default: ""
+      build-args:
+        description: Additional build args based to docker build
+        type: string
+        required: false
+        default: ""
+    secrets:
+      secret-build-args:
+        description: Additional build args based to docker build that are secret
+        required: false
 jobs:
   unit-tests:
     name: Unit Tests
@@ -73,14 +82,14 @@ jobs:
 
       - name: Get next image tag
         id: get-next-image-tag
-        uses: acceleratelearning/get-next-ecr-image-tag-action@main
+        uses: acceleratelearning/action-get-next-ecr-image-tag@v1
         with:
           registry: ${{ inputs.registry }}
           repository-name: ${{ inputs.repository-name }}
           major-minor-version: ${{ inputs.major-minor-version }}
 
       - name: Test container image
-        uses: acceleratelearning/build-container-image-action@main
+        uses: acceleratelearning/action-build-container-image@v1
         with:
           image-name: ${{ steps.get-next-image-tag.outputs.next-image-name }}
           docker-context: ${{ inputs.docker-context }}
@@ -89,13 +98,15 @@ jobs:
           authors: ${{ inputs.authors }}
           documentation-url: ${{ inputs.documentation-url }}
           test-target: ${{ inputs.test-target }}
+          build-args: ${{ inputs.build-args }}
+          secret-build-args: ${{ secrets.secret-build-args }}
 
       - name: Get Test Results
         run: |
           docker run -i --rm ${{ steps.get-next-image-tag.outputs.next-image-name }} sh -c "if [ -f /testresults/TestResults.xml ]; then cat /testresults/TestResults.xml; fi" > TestResults.xml
 
       - name: Unit Tests Report
-        uses: acceleratelearning/unit-tests-report-action@main
+        uses: acceleratelearning/action-unit-tests-report@v1
 
   build-test:
     name: Test Full Build
@@ -119,14 +130,14 @@ jobs:
 
       - name: Get next image tag
         id: get-next-image-tag
-        uses: acceleratelearning/get-next-ecr-image-tag-action@main
+        uses: acceleratelearning/action-get-next-ecr-image-tag@v1
         with:
           registry: ${{ inputs.registry }}
           repository-name: ${{ inputs.repository-name }}
           major-minor-version: ${{ inputs.major-minor-version }}
 
       - name: Build container image
-        uses: acceleratelearning/build-container-image-action@main
+        uses: acceleratelearning/action-build-container-image@v1
         with:
           image-name: ${{ steps.get-next-image-tag.outputs.next-image-name }}
           docker-context: ${{ inputs.docker-context }}
@@ -134,3 +145,5 @@ jobs:
           description: ${{ inputs.description }}
           authors: ${{ inputs.authors }}
           documentation-url: ${{ inputs.documentation-url }}
+          build-args: ${{ inputs.build-args }}
+          secret-build-args: ${{ secrets.secret-build-args }}
